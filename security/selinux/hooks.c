@@ -1564,11 +1564,6 @@ static int inode_has_perm(const struct cred *cred,
 	sid = cred_sid(cred);
 	isec = inode->i_security;
 
-	if (unlikely(!isec)){
-		printk(KERN_CRIT "[SELinux] isec is NULL, inode->i_security is already freed. \n");
-		return -EACCES;
-	}
-
 	return avc_has_perm_flags(sid, isec->sid, isec->sclass, perms, adp, flags);
 }
 
@@ -1914,12 +1909,10 @@ static int selinux_binder_transfer_file(struct task_struct *from, struct task_st
 	struct inode *inode = file->f_path.dentry->d_inode;
 	struct inode_security_struct *isec = inode->i_security;
 	struct common_audit_data ad;
-	struct selinux_audit_data sad = {0,};
 	int rc;
 
 	ad.type = LSM_AUDIT_DATA_PATH;
 	ad.u.path = file->f_path;
-	ad.selinux_audit_data = &sad;
 
 	if (sid != fsec->sid) {
 		rc = avc_has_perm(sid, fsec->sid,
@@ -3245,18 +3238,11 @@ error:
 static int selinux_mmap_addr(unsigned long addr)
 {
 	int rc;
-
 	/* do DAC check on address space usage */
 	rc = cap_mmap_addr(addr);
 	if (rc)
 		return rc;
 
-	/*
-	 * notice that we are intentionally putting the SELinux check before
-	 * the secondary cap_file_mmap check.  This is such a likely attempt
-	 * at bad behaviour/exploit that we always want to get the AVC, even
-	 * if DAC would have also denied the operation.
-	 */
 	if (addr < CONFIG_LSM_MMAP_MIN_ADDR) {
 		u32 sid = current_sid();
 		rc = avc_has_perm(sid, sid, SECCLASS_MEMPROTECT,
@@ -3940,11 +3926,6 @@ static int sock_has_perm(struct task_struct *task, struct sock *sk, u32 perms)
 	struct common_audit_data ad;
 	struct lsm_network_audit net = {0,};
 	u32 tsid = task_sid(task);
-
-	if (unlikely(!sksec)){
-		printk(KERN_CRIT "[SELinux] sksec is NULL, socket is already freed. \n");
-		return -EINVAL;
-	}
 
 	if (sksec->sid == SECINITSID_KERNEL)
 		return 0;
