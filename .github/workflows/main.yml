@@ -9,7 +9,7 @@ jobs:
 
     steps:
     - name: Checkout Kernel Source
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Getting Toolchain
       run: |
@@ -18,13 +18,13 @@ jobs:
     - name: Building Kernel
       run: |
         make -j2 j3x3g-dt_defconfig
-        make -j64
+        make -j12
     - name: Moving Output # CI only
       run: |
         mkdir -p /home/runner/work/output
         cp arch/arm/boot/Image /home/runner/work/output/zImage
     - name: Uploading Output
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: zImage
         path: /home/runner/work/output/zImage
